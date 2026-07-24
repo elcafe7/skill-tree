@@ -383,8 +383,84 @@ course_version: 0.1.0
 The response text is private learner state. It is never committed by default,
 sent to a third party, or used to generate a public profile.
 
+### Fast lane: offline study sets
+
+Not every learner needs a course compiler. A **study set** is a deliberately
+thin local package for vocabulary, facts, names, formulas, commands, or any
+other prompt–answer pairs. It bypasses the full course pipeline: no evidence
+cards, classes, lessons, benchmarks, or qualifications are required.
+
+```text
+two-column list → local study set → cards / ladder / typeback → private review queue
+```
+
+The simplest accepted file is UTF-8 tab-separated text:
+
+```tsv
+front	back
+Rubicon	The river Caesar crossed into Italy in 49 BCE.
+senatus consultum ultimum	The Senate's "final decree" authorising emergency action.
+```
+
+CSV with `front` and `back` headers, a two-column Markdown table, and lines in
+the form `front :: back` are also accepted. Import must reject malformed rows,
+empty fronts or backs, duplicate fronts unless explicitly allowed, and files
+with a delimiter that cannot be determined safely.
+
+```bash
+# Create a completely local set and begin studying.
+learn import roman-terms.tsv --name roman-terms
+learn study roman-terms
+
+# Choose a mode or direction; all state remains local.
+learn study roman-terms --mode cards
+learn study roman-terms --mode ladder --reverse
+learn study roman-terms --mode typeback --limit 20
+learn review roman-terms --due
+
+# Inspect or move the portable material without exporting learner responses.
+learn sets list
+learn sets show roman-terms
+learn export roman-terms --format tsv --without-state
+```
+
+The importer creates this minimal package:
+
+```text
+sets/roman-terms/
+  set.yaml                    # name, import metadata, default direction
+  items.yaml                  # generated prompt–answer items
+  state/
+    learner.json              # private, ignored by default
+```
+
+`items.yaml` uses the same item contract as courses. Each pair becomes a
+forward item (`front → back`); `--reverse` creates or enables a separate
+reverse item (`back → front`). The import source is recorded as `user-import`
+rather than pretending the set has external evidence or curricular authority.
+
+For unstructured notes, an optional AI-assisted command may propose pairs but
+never silently writes them:
+
+```bash
+learn import notes.md --extract --ai --name biology-midterm
+learn items review biology-midterm --accept-all
+```
+
+The first command writes a reviewable proposal; the learner must inspect,
+accept, edit, or reject the extracted items. The normal two-column import works
+with no account, service, AI provider, or network connection.
+
 ### Implementation TODO
 
+- [ ] Implement the study-set importer for TSV, headered CSV, Markdown tables,
+  and `front :: back` text, with clear row-level error reporting.
+- [ ] Create a study-set package from a valid import and initialise a private,
+  ignored learner-state file only after the first study session.
+- [ ] Implement `learn study`, reverse direction, due-only review, and
+  state-free TSV export before adding any visual game mode.
+- [ ] Add proposal-only AI extraction for unstructured notes; require explicit
+  review before items enter a set.
 - [ ] Define `memorisation_item`, accepted-answer, distractor, media, and
   scenario schemas; require item IDs and source anchors.
 - [ ] Build the local append-only attempt ledger and deterministic due-review
