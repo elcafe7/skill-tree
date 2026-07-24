@@ -655,6 +655,113 @@ learn language qualify es-419 foundation
 - [ ] Create one reference pack only after a qualified language specialist has
   reviewed its variation policy, prompts, benchmarks, and rights metadata.
 
+## Corpus-ingestion implementation sketch
+
+The first ingestion implementation should be a **generic corpus compiler**.
+Gray’s Anatomy is only the first proof-of-work fixture because it exercises
+hard cases—scanned pages, columns, figures, captions, historical terminology,
+and dense cross-references. No production schema or command should contain
+anatomy-specific assumptions.
+
+### Stable interfaces
+
+```text
+SourceAdapter
+  ingest(input) -> SourceManifest + immutable source artifacts
+
+Page/UnitExtractor
+  extract(source artifact) -> EvidenceUnit[]
+
+StructureResolver
+  resolve(EvidenceUnit[]) -> StructureNode[] + source edges
+
+EdgeProposer
+  propose(verified structure window) -> CandidateEdge[]
+
+LessonCompiler
+  compile(approved edges + bounded evidence) -> LessonProposal
+
+BenchmarkCompiler
+  compile(approved lesson + profile) -> BenchmarkProposal
+
+ReleaseValidator
+  validate(corpus, lessons, benchmarks) -> blocking report
+```
+
+Adapters are responsible for source shape; the later stages consume the same
+canonical evidence interface. Initial adapters should cover paginated PDFs,
+plain text/Markdown, and timestamped transcripts. Future adapters can cover
+HTML, slide decks, scanned images, and structured language packs.
+
+### Canonical evidence model
+
+```text
+Corpus
+  └─ SourceDocument (edition/version/hash/rights)
+      └─ EvidenceUnit (page, section, timestamp, or note block)
+          ├─ EvidenceSpan (exact text, coordinates, confidence)
+          ├─ MediaReference (image/audio/video + hash)
+          └─ StructureNode (chapter, heading, figure, procedure, clause, ...)
+```
+
+Interpretation is kept separate from evidence:
+
+```text
+Concept ──GraphEdge──> Concept
+   │                    │
+   └── EvidenceSpan[]   └── EvidenceSpan[]
+```
+
+An edge can be `contains`, `precedes`, `requires`, `contrasts`, `part_of`,
+`cross_references`, `illustrates`, or `theme_of`. Every proposed edge carries
+source spans, generator metadata, confidence, and `proposed|reviewed|rejected`
+status. An AI may propose edges; it may not silently promote them to reviewed
+facts.
+
+### Phased proof of work
+
+1. **Acquire and fingerprint:** accept one selected edition, save the original
+   file, record rights/provenance, and compute hashes.
+2. **Extract without loss:** render each page/unit, run OCR or transcript
+   extraction independently, and preserve raw output, normalized output,
+   confidence, coordinates, and page/unit identity.
+3. **Verify structure:** reconcile page count, table of contents, section
+   boundaries, figures, captions, and missing/duplicate units. Block synthesis
+   when structural checks fail.
+4. **Persist corpus:** load documents, units, spans, structures, media, and
+   review events into a local SQLite database; retain the original artifacts
+   beside the database.
+5. **Propose edges:** send only bounded, verified chapter/section windows to an
+   AI edge pass. Store candidate themes, prerequisites, concepts, and
+   cross-references with citations.
+6. **Review graph:** provide a text/CLI review that accepts, edits, or rejects
+   candidates. No lesson compilation runs against unreviewed edges by default.
+7. **Compile lessons:** generate lesson proposals from approved edges and
+   bounded evidence windows. Require page/unit citations for every claim.
+8. **Compile and audit benchmarks:** create retrieval, explanation,
+   discrimination, and application tasks; run source-fidelity, coverage, and
+   citation audits before static release.
+
+### Proof-of-work commands
+
+```bash
+learn corpus init gray-anatomy-1918 --source ./source.pdf
+learn corpus fingerprint gray-anatomy-1918
+learn corpus extract gray-anatomy-1918 --ocr --pages independently
+learn corpus verify-structure gray-anatomy-1918 --strict
+learn corpus load gray-anatomy-1918 --db corpus.sqlite
+learn corpus edges gray-anatomy-1918 --chapters 1-3 --ai --proposal-only
+learn corpus review-edges gray-anatomy-1918
+learn corpus lessons gray-anatomy-1918 --from-reviewed-edges
+learn corpus audit gray-anatomy-1918 --claims --citations --coverage
+```
+
+The Gray’s Anatomy run is successful only if the same interfaces can later
+accept a manual, legal text, transcript, language pack, or ordinary Markdown
+corpus without changing the evidence or graph schema. At this stage the
+deliverable is a verified corpus plus lesson proposals—not a claim that the
+entire book has been pedagogically or medically modernised.
+
 ### Implementation TODO
 
 - [ ] Implement the study-set importer for TSV, headered CSV, Markdown tables,
