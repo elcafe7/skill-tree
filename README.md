@@ -451,6 +451,210 @@ The first command writes a reviewable proposal; the learner must inspect,
 accept, edit, or reject the extracted items. The normal two-column import works
 with no account, service, AI provider, or network connection.
 
+## Language-learning framework packs
+
+Language learning is a first-class optional framework, not a one-size-fits-all
+course template. The engine supplies reusable learning and assessment
+machinery; a **language pack** supplies the linguistic facts, media, variants,
+and benchmark adaptations for one target language and locale.
+
+The framework measures what a learner can do across reception, production,
+interaction, and mediation—rather than treating language ability as a count of
+memorised words. This follows the same action-oriented distinction used by the
+[CEFR](https://www.coe.int/en/web/portfolio/the-common-european-framework-of-reference-for-languages-learning-teaching-assessment-cefr-),
+whose descriptors define reception, production, interaction, and mediation as
+separate activities. CEFR alignment is optional: the tool may report a local
+profile without claiming a formal CEFR level.
+
+### Separation of responsibilities
+
+| Reusable language framework | Language and locale pack |
+| --- | --- |
+| Course graph, review scheduler, game modes, rubrics, recordings, attempt ledger, static build | Writing system, sound/sign system, vocabulary, grammar, examples, audio/video, varieties, cultural notes, benchmark tasks |
+| Capability axes and completion evaluator | Which axes apply, target outcomes, pass criteria, accepted variants, source and media provenance |
+| Generic item types: cards, dictation, minimal pairs, cloze, dialogue turns, labels, scenarios | Actual items, distractors, transliterations, glosses, translations, recordings, images, and context |
+
+The framework must never invent a default dialect. A target is identified by a
+BCP 47-style language–script–region tag where relevant (for example,
+`es-419`, `pt-BR`, `sr-Cyrl-RS`), plus a pack-defined name. Script and regional
+variation are explicit because a language can have multiple customary scripts
+or materially different regional forms. Unicode CLDR treats language, script,
+and region as distinct locale dimensions. [Unicode locale guidance](https://cldr.unicode.org/translation/translation-guide-general/default-content)
+
+### Capability axes
+
+Every language profile selects the axes it can credibly assess; none are
+silently assumed. Spoken, signed, written, and primarily oral languages can
+therefore share a framework without being forced into the same lesson type.
+
+| Axis | Evidence examples |
+| --- | --- |
+| `reception` | Understand an unfamiliar spoken, signed, audio-visual, or written input; identify gist and necessary details. |
+| `production` | Speak, sign, or write an intelligible message for a stated purpose and audience. |
+| `interaction` | Sustain a turn-taking exchange, repair a misunderstanding, ask follow-up questions, and respond appropriately. |
+| `mediation` | Summarise, paraphrase, translate, or help two parties understand a text or concept. |
+| `form` | Use the selected writing system, phonology/handshape, orthography, morphology, and syntax required by the profile. |
+| `lexis` | Retrieve and select useful words, fixed expressions, collocations, and domain vocabulary in context. |
+| `sociopragmatics` | Select a register, politeness strategy, convention, and cultural reference suitable for the situation. |
+
+`form` is configured per modality: a signed-language pack may select signing
+features rather than phonology; an unwritten-language pack may omit literacy;
+a multi-script pack may make a particular script an explicit target instead of
+assuming transliteration is competence.
+
+### Pack shape
+
+```text
+language-packs/es-419/
+  pack.yaml                   # target, variants, modalities, licences, version
+  profiles/
+    foundation.yaml
+    everyday-interaction.yaml
+  writing/
+    orthography.yaml
+    keyboard-layouts.yaml
+  sound/
+    phoneme-inventory.yaml
+    minimal-pairs.yaml
+  lexicon/
+    core.yaml
+    domains/food.yaml
+  grammar/
+    patterns.yaml
+    constructions.yaml
+  pragmatics/
+    registers.yaml
+    interaction-repairs.yaml
+  media/
+    manifest.yaml             # local audio/video/image hashes and rights
+  benchmarks/
+    foundation.yaml
+  sources/
+    provenance.yaml
+```
+
+`pack.yaml` declares the primary locale, supported alternatives, scripts,
+modalities, transliteration policy, default input method, and a review date.
+All language claims and media retain source, rights, speaker/performer consent
+where applicable, and content hashes. A pack cannot claim audio or dialect
+coverage it does not actually provide.
+
+### Reusable progression profiles
+
+Profiles are named by function, not by an unsupported claim of fluency. A pack
+may map a profile to a CEFR level only when it ships an explicit descriptor
+crosswalk and language-specific benchmark tasks.
+
+| Profile | Purpose | Typical included axes |
+| --- | --- | --- |
+| `orientation` | Establish sound/sign, script, input, survival vocabulary, and basic classroom directions. | Form, lexis, selected reception/production. |
+| `foundation` | Exchange predictable personal information and manage rehearsed everyday micro-tasks. | Reception, production, interaction, form, lexis. |
+| `everyday-interaction` | Handle routine transactions, plans, directions, needs, and short personal narratives with repair. | All core axes except mediation if the pack omits it. |
+| `independent-use` | Understand and produce connected discourse in familiar domains; handle variation and unplanned interaction. | All selected axes, including sociopragmatics. |
+| `domain-use` | Function in a declared domain such as travel, family, workplace, theology, medicine, or literature. | Pack-selected axes plus domain lexis and tasks. |
+
+Profiles are composable. A learner can complete `foundation` plus
+`domain-use:travel` without the system implying broad independent proficiency.
+
+### Language-specific benchmark contract
+
+Each profile has a benchmark matrix. Completion means meeting every required
+row with held-out content, not completing a fixed number of cards.
+
+```yaml
+id: es-419-foundation
+profile: foundation
+target: es-419
+framework_version: 0.1.0
+axes:
+  reception:
+    required: true
+    task: understand-short-unfamiliar-audio
+    pass: {gist: 0.80, required_details: 0.70}
+  production:
+    required: true
+    task: record-a-60-second-self-introduction
+    rubric: rubrics/foundation-production.yaml
+    pass: 0.75
+  interaction:
+    required: true
+    task: branching-everyday-dialogue
+    requirements: [ask_follow_up, respond_to_repair, appropriate_register]
+  form:
+    required: true
+    task: write-short-message
+    requirements: [target_orthography, intelligible_word_order]
+  lexis:
+    required: true
+    task: delayed-contextual-retrieval
+    pass: {sample_size: 40, accuracy: 0.80, delayed_days: 7}
+  sociopragmatics:
+    required: true
+    task: choose-register-for-three-contexts
+    pass: 0.80
+qualification:
+  label: "Spanish (Latin America) — Foundation (local profile)"
+```
+
+The benchmark author chooses appropriate tasks for the language. An exact
+spelling test is not a valid universal proxy for speech, signing, or
+interaction; a multiple-choice grammar score is not a sufficient proxy for
+production. Automated or AI-assisted evaluation may provide feedback and a
+provisional score, but interaction, pragmatic appropriateness, and open-ended
+production require a retained recording/text plus a transparent rubric and
+learner or human review before a qualification is issued.
+
+### Framework-specific learning pipeline
+
+```text
+select target locale + variant
+  → install/author a language pack
+  → select functional profile(s)
+  → validate coverage and media rights
+  → generate courses, study sets, and modality-appropriate games
+  → practise with delayed retrieval and comprehensible input
+  → perform held-out benchmark tasks per capability axis
+  → issue local profile qualification with retained evidence
+```
+
+```bash
+# Select a local pack and create a learning plan.
+learn languages list
+learn language install ./language-packs/es-419
+learn language validate es-419 --strict
+learn language plan es-419 --profile foundation
+
+# Study generated or hand-authored material by modality.
+learn language study es-419 --track reception
+learn language study es-419 --track form --script Latn
+learn language practise es-419 --mode dialogue-repair
+
+# Evaluate a named local profile.
+learn language benchmark es-419 foundation
+learn language qualify es-419 foundation
+```
+
+### Language framework TODO
+
+- [ ] Define language-pack, variant, modality, transliteration, media-rights,
+  and benchmark-matrix schemas.
+- [ ] Implement pack validation: valid target tag, declared scripts and input
+  methods, complete source/media provenance, resolved profile references, and
+  no benchmark axis without a task and rubric.
+- [ ] Ship a language-neutral framework pack with item types for lexical
+  retrieval, cloze, dictation, minimal pairs, script practice, dialogue turns,
+  and scenario-based repair.
+- [ ] Build profile planning so a learner chooses a locale and functional
+  outcome rather than an unbounded “learn this language” goal.
+- [ ] Implement audio/video recording and local evidence retention; make all
+  recording opt-in and provide text-only alternatives where possible.
+- [ ] Implement held-out benchmark selection and qualification evaluation that
+  ignores raw game points and uses only declared axis evidence.
+- [ ] Add an optional CEFR crosswalk format; prohibit display of a CEFR label
+  unless every mapped descriptor and benchmark is present in the pack.
+- [ ] Create one reference pack only after a qualified language specialist has
+  reviewed its variation policy, prompts, benchmarks, and rights metadata.
+
 ### Implementation TODO
 
 - [ ] Implement the study-set importer for TSV, headered CSV, Markdown tables,
