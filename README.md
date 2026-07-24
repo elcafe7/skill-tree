@@ -257,6 +257,162 @@ version, date, outcome, and resulting evidence artifact. Material course
 changes can mark an earlier qualification `stale` and prescribe a delta
 benchmark. This is intentionally evidence rather than a decorative badge.
 
+## Gamification specification and TODO
+
+Gamification is an optional **local practice layer**, not the course's
+credentialing system. It exists to make repeated retrieval varied and inviting;
+it must not convert study into a score chase or confuse speed with competence.
+
+### Non-negotiable rules
+
+- All game state is private, local, and usable offline. There are no rankings,
+  social comparison, variable-reward monetisation, or notifications designed to
+  pull a learner back into the app.
+- Every mode has a calm, keyboard-first, untimed alternative. Motion, sound,
+  countdowns, and colour-only signals are optional, never required to pass.
+- Game scores, streaks, and personal bests are session metadata. They cannot
+  unlock a qualification or substitute for a benchmark.
+- A course author chooses which modes fit each item. The learner can always
+  choose a non-game recall session instead.
+- Accuracy, delayed recall, and demonstrated application outweigh response
+  speed. Timed modes are recognition refreshers, not evidence of mastery.
+
+### Memorisation-item contract
+
+Lessons expose portable items before any game mode consumes them. An item may
+represent a term, relationship, ordered step, diagram location, audio prompt,
+claim, error pattern, or scenario decision.
+
+```yaml
+id: republic-03-rubicon-boundary
+lesson: republic-03-caesar-crosses-the-rubicon
+kind: fact
+prompt: What political and legal boundary did Caesar cross?
+answers:
+  accepted: ["the Rubicon", "Rubicon river"]
+  required_elements: [Italy, command, civil-war]
+directions: [prompt_to_answer, answer_to_prompt]
+source_claims: [SRC-014#p18]
+media: null
+tags: [constitutional-crisis, Rome]
+```
+
+The compiler produces proposed items from lesson claims; the author validates
+the prompt, accepted answers, ambiguity, and source anchors. Items with an
+unresolved or subjective answer cannot enter exact-answer game modes.
+
+### Mode catalogue
+
+| ID | Mode | Core mechanic | Appropriate evidence |
+| --- | --- | --- | --- |
+| `cards` | Recall Cards | Reveal or type a response, then self-grade or compare. | Initial exposure and light review. |
+| `ladder` | Mastery Ladder | Move from recognition to cued recall, typed recall, then discrimination; misses return later. | Default memorisation path. |
+| `typeback` | Typeback Loop | Enter the answer; missed items must be answered correctly in a later round. | Vocabulary, names, formulas, exact terms. |
+| `dictation` | Dictation | Listen to a prompt and type or speak the answer. | Spelling, pronunciation, language learning. |
+| `pairs` | Pair Sprint | Pair shuffled prompts and answers; errors apply a time penalty. | Short recognition refreshers only. |
+| `label` | Label Map | Identify or place labels on a supplied diagram, image, map, or code structure. | Spatial/visual knowledge. |
+| `error-hunt` | Error Hunt | Identify and correct a false claim, faulty step, or bad inference. | Discrimination and conceptual repair. |
+| `scenario` | Scenario Branch | Make a decision in a compact case; reveal consequences and next decision. | Procedure and judgement practice. |
+| `grid` | Grid Builder | Correct responses earn pieces used to complete a private board. | Optional reward wrapper around recall. |
+| `target` | Target Rush | Select the correct response from transient choices; static mode is always available. | Optional high-energy recognition drill. |
+| `exam` | Exam Forge | Configurable mixed retrieval session with review of errors. | Benchmark preparation, never qualification itself. |
+
+`grid` and `target` are visual wrappers, not new learning algorithms. They may
+reuse the same `cards`, `ladder`, or `pairs` attempt engine and must not change
+whether an answer is considered correct.
+
+### Mastery Ladder algorithm
+
+`ladder` is the mandatory first implementation because it turns game activity
+into useful retrieval practice:
+
+1. Present a recognition prompt with plausible distractors when appropriate.
+2. Require a cued answer: prompt plus partial cue, then a typed or selected
+   response.
+3. Require uncued recall in the configured direction.
+4. Require discrimination: distinguish the item from a nearby misconception,
+   confusable term, or counterexample.
+5. Mark the item `provisionally_mastered` only after two correct recall events
+   in separate rounds. Schedule it for delayed review at 1, 7, and 30 days.
+6. A miss returns the item to the previous difficulty stage, stores the error
+   category if known, and shows a source-linked correction before the next
+   attempt.
+
+The initial schedule is deterministic and local. A later release may add an
+adaptive scheduler, but it must remain explainable and export the evidence for
+each scheduling decision.
+
+### CLI contract
+
+```bash
+# generate and inspect practice material
+learn items build roman-survey --from lessons
+learn items validate roman-survey --strict
+learn items list roman-survey --lesson republic-03
+
+# run private practice sessions
+learn play roman-survey --mode ladder --lesson republic-03
+learn play roman-survey --mode typeback --tag constitutional-crisis
+learn play roman-survey --mode pairs --count 12 --timed
+learn play roman-survey --mode error-hunt --class republic
+learn play roman-survey --mode label --asset maps/italy.svg
+learn review due
+
+# inspect, never publish, performance data
+learn practice status roman-survey
+learn practice history republic-03-rubicon-boundary
+```
+
+All modes write the same append-only attempt record. A renderer may later make
+visual modes available in a local browser, but the CLI remains the reference
+runtime and must be fully playable without it.
+
+```yaml
+item_id: republic-03-rubicon-boundary
+mode: ladder
+stage: uncued_recall
+occurred_at: 2026-07-24T12:00:00Z
+result: correct
+response: the Rubicon
+elapsed_ms: 6800
+score_delta: 0
+next_review_at: 2026-07-31T12:00:00Z
+course_version: 0.1.0
+```
+
+The response text is private learner state. It is never committed by default,
+sent to a third party, or used to generate a public profile.
+
+### Implementation TODO
+
+- [ ] Define `memorisation_item`, accepted-answer, distractor, media, and
+  scenario schemas; require item IDs and source anchors.
+- [ ] Build the local append-only attempt ledger and deterministic due-review
+  scheduler.
+- [ ] Implement `cards`, `ladder`, and `typeback` in the terminal, including
+  skip, reveal, correction, and retry flows.
+- [ ] Implement strict validation for duplicate items, missing lesson/source
+  links, unusable exact-answer items, and unsafe/circular scenario graphs.
+- [ ] Implement `pairs` and `error-hunt` as wrappers over the same item and
+  attempt contracts; test that their scoring cannot affect qualifications.
+- [ ] Add local personal-best, streak, and session-summary views, each with an
+  option to disable gamification display entirely.
+- [ ] Add `label`, `scenario`, `grid`, and `target` only after a local visual
+  renderer exists; retain static and keyboard-accessible variants.
+- [ ] Add `exam` as a separately versioned preparation mode, then connect only
+  validated performance benchmarks to qualifications.
+
+### Acceptance checks
+
+- A fully offline terminal session can complete a ladder round, record an
+  attempt, surface the correction for a miss, and show the next due review.
+- A learner can disable timers, motion, sound, scores, and streaks without
+  losing access to any course material or qualification.
+- A qualification evaluator ignores all game-specific fields and evaluates only
+  its declared lesson, review, and benchmark evidence.
+- Deleting a private state directory removes progress but never alters authored
+  course content or source evidence.
+
 ## Delivery sequence
 
 1. Implement a local CLI using canonical YAML/Markdown, schema validation, and
