@@ -230,6 +230,11 @@ def status(conn: sqlite3.Connection, now: datetime) -> dict:
                           "JOIN skill_state st ON st.skill_id = s.id ORDER BY s.rowid").fetchall():
         skills.append({"id": r["id"], "title": r["title"], "p_known": r["p_known"],
                        "unlocked": bool(r["unlocked"]),
+                       "learned": conn.execute(
+                           "SELECT COUNT(*) FROM card_state c JOIN items i ON i.id = c.item_id "
+                           "WHERE i.skill_id = ? AND c.relearn_phase = 'learned'", (r["id"],)).fetchone()[0],
+                       "n_items": conn.execute("SELECT COUNT(*) FROM items WHERE skill_id = ?",
+                                               (r["id"],)).fetchone()[0],
                        "unmet": [] if r["unlocked"] else unlock.unmet(_prereq_views(conn, r["id"]))})
     return {"due_now": due_now, "due_today": due_today, "skills": skills}
 

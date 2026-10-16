@@ -11,23 +11,23 @@ def H(*pairs):
     return [(T0 + off, c) for off, c in pairs]
 
 
-GOOD = H((timedelta(0), True), (D, True), (2 * D, True), (3 * D, True))  # 3 delayed successes on distinct days
+GOOD = H((timedelta(0), True), (D, True), (2 * D, True))  # 2 delayed successes on distinct days
 
 
 def test_item_mastery():
     assert item_mastered(GOOD)
-    assert not item_mastered(GOOD[:3])                                                  # only 2 delayed days
-    assert not item_mastered(GOOD[:3] + H((2 * D + timedelta(hours=1), True)))          # same day
-    assert not item_mastered(H((timedelta(0), True), (timedelta(hours=23), True)) + GOOD[2:])  # <24h doesn't count
-    assert not item_mastered(GOOD + H((4 * D, False)))                                  # most recent wrong
-    lapse = GOOD + H((4 * D, False), (5 * D, True), (6 * D, True))
+    assert not item_mastered(GOOD[:2])                                                  # only 1 delayed day
+    assert not item_mastered(GOOD[:2] + H((D + timedelta(hours=1), True)))              # same day
+    assert not item_mastered(H((timedelta(0), True), (timedelta(hours=23), True), (D, True)))  # <24h doesn't count
+    assert not item_mastered(GOOD + H((3 * D, False)))                                  # most recent wrong
+    lapse = GOOD + H((3 * D, False), (4 * D, True))
     assert not item_mastered(lapse)                                                     # lapse resets
-    assert item_mastered(lapse + H((7 * D, True)))
-    # accuracy over last 6: W W W W then 3 delayed correct days -> 3/6 = 50% < 70%
-    misses = H(*[(timedelta(hours=h), False) for h in range(4)])
-    low = misses + H((D, True), (2 * D, True), (3 * D, True))
+    assert item_mastered(lapse + H((5 * D, True)))
+    # accuracy over last 6: W W W W C C -> 33% < 70% even with 2 delayed days
+    low = H(*[(timedelta(hours=h), False) for h in range(4)]) + H((D, True), (2 * D, True))
     assert not item_mastered(low)
-    assert item_mastered(low + H((4 * D, True), (5 * D, True)))                       # last 6: 1 W, 5 C = 83%
+    assert not item_mastered(low + H((3 * D, True)))                                    # 3/6 = 50%
+    assert item_mastered(low + H((3 * D, True), (4 * D, True), (5 * D, True)))          # W C C C C C = 83%
 
 
 def _view(p, mastered, n=3):
@@ -63,15 +63,13 @@ def test_unlock_through_engine(loaded, clock):
     assert _unlocked(loaded) == {"A"}
     for _ in range(3):
         _round(loaded, clock, A)
-    for _ in range(2):
-        clock.advance(days=1); _round(loaded, clock, A)
-    assert _unlocked(loaded) == {"A"}                     # only two delayed days so far
+    clock.advance(days=1); _round(loaded, clock, A)
+    assert _unlocked(loaded) == {"A"}                     # only one delayed day so far
     clock.advance(days=1); _round(loaded, clock, ["a1", "a2"], wrong=["a2"])
     _round(loaded, clock, ["a3"])
     assert _unlocked(loaded) == {"A"}                     # a2 lapsed -> 2/3 mastered
-    for _ in range(2):
-        clock.advance(days=1); _round(loaded, clock, ["a2"])
-    assert _unlocked(loaded) == {"A"}                     # a2 has 2 delayed days since lapse
+    clock.advance(days=1); _round(loaded, clock, ["a2"])
+    assert _unlocked(loaded) == {"A"}                     # a2 has 1 delayed day since lapse
     clock.advance(days=1)
     res = engine.record_answer(loaded, "a2", "8", clock.now())
     assert set(res.unlocked) == {"B", "C"}

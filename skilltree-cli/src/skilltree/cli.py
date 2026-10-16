@@ -89,7 +89,7 @@ def status():
     typer.echo(f"Due now: {st['due_now']}   Due today: {st['due_today']}")
     for sk in st["skills"]:
         state = "unlocked" if sk["unlocked"] else "locked"
-        typer.echo(f"  {sk['id']:<20} p_known={sk['p_known']:.2f}  {state}")
+        typer.echo(f"  {sk['id']:<20} p_known={sk['p_known']:.2f}  {state}  learned {sk['learned']}/{sk['n_items']}")
         for pid, why in sk["unmet"]:
             typer.echo(f"      needs {pid}: {why}")
 

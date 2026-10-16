@@ -14,7 +14,7 @@ def test_end_to_end(tmp_path):
     assert res.exit_code == 0, res.output
     assert "Correct." in res.output and "Answer: 8" in res.output and "Doubles" in res.output
     res = r.invoke(app, ["--db", db, "status"])
-    assert "needs A" in res.output and "p_known=" in res.output
+    assert "needs A" in res.output and "p_known=" in res.output and "learned 0/3" in res.output
     assert r.invoke(app, ["--db", db, "rebuild"]).exit_code == 0
     res = r.invoke(app, ["--db", db, "export"])
     assert res.output.count('"type": "answered"') == 2

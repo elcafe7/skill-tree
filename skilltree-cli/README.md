@@ -57,9 +57,9 @@ explanation, in one transaction (no partial writes). Re-import upserts by id.
 - **Grading:** trim, collapse whitespace, casefold, exact match against any accepted answer.
 - **Feedback:** explanation after every answer; on a miss, the correct answer first, then wait for Enter.
 - **FSRS:** correct = Good, wrong = Again (py-fsrs defaults, fuzzing off for replay determinism).
-- **Successive relearning:** 3 correct on the first study day, then 3 correct on 3 distinct later days = learned.
+- **Successive relearning ("learned"):** 3 correct on the first study day, then 3 correct on 3 distinct later days. Shown in `status`; gates nothing.
 - **BKT per skill:** P_INIT 0.1, P_TRANSIT 0.15, P_GUESS 0.05, P_SLIP 0.1.
-- **Unlock:** each prerequisite needs p_known >= 0.95, and >= 80% of its items must each have 3 correct answers on different days (each >= 24h after the item's first exposure and after its last miss), >= 70% accuracy over its last 6 answers, and a correct latest answer.
+- **Unlock:** each prerequisite needs p_known >= 0.95, and >= 80% of its items must each have 2 correct answers on different days (each >= 24h after the item's first exposure and after its last miss), >= 70% accuracy over its last 6 answers, and a correct latest answer.
 - **Events** (`imported`, `answered`, `unlocked`) are append-only; `card_state`/`skill_state` are derived.
 
 Constants live in `src/skilltree/config.py`.
@@ -69,5 +69,5 @@ Constants live in `src/skilltree/config.py`.
 ```
 src/skilltree/  cli.py db.py engine.py grading.py scheduler.py relearning.py bkt.py unlock.py
                 yaml_import.py clock.py config.py migrations/0001_init.sql
-tests/          unit tests, CLI end-to-end, sim/test_simulated_learners.py (90-day FakeClock)
+tests/          unit tests, CLI end-to-end, sim/test_simulated_learners.py (60-day FakeClock)
 ```

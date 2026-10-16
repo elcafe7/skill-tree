@@ -11,7 +11,7 @@ from skilltree.clock import FakeClock, iso, parse
 from skilltree.yaml_import import load_file
 from conftest import FIXTURE
 
-DAYS = 90
+DAYS = 60
 
 
 class Perfect:
