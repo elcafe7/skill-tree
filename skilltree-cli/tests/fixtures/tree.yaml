@@ -1,0 +1,29 @@
+skills:
+  - id: A
+    title: Single-digit addition
+    requires: []
+    items:
+      - {id: a1, prompt: "2 + 3 = ?", answers: ["5", "five"], explanation: "Count up 3 from 2: 3, 4, 5."}
+      - {id: a2, prompt: "4 + 4 = ?", answers: ["8", "eight"], explanation: "Doubles: 4 + 4 = 8."}
+      - {id: a3, prompt: "7 + 2 = ?", answers: ["9", "nine"], explanation: "Count up 2 from 7: 8, 9."}
+  - id: B
+    title: Two-digit addition
+    requires: [A]
+    items:
+      - {id: b1, prompt: "12 + 7 = ?", answers: ["19"], explanation: "Add the ones: 2 + 7 = 9, keep the ten: 19."}
+      - {id: b2, prompt: "25 + 13 = ?", answers: ["38"], explanation: "Tens 20 + 10 = 30, ones 5 + 3 = 8."}
+      - {id: b3, prompt: "46 + 21 = ?", answers: ["67"], explanation: "Tens 40 + 20 = 60, ones 6 + 1 = 7."}
+  - id: C
+    title: Repeated addition
+    requires: [A]
+    items:
+      - {id: c1, prompt: "3 + 3 + 3 = ?", answers: ["9"], explanation: "Three threes: 3, 6, 9."}
+      - {id: c2, prompt: "2 + 2 + 2 + 2 = ?", answers: ["8"], explanation: "Four twos: 2, 4, 6, 8."}
+      - {id: c3, prompt: "5 + 5 = ?", answers: ["10", "ten"], explanation: "Two fives make ten."}
+  - id: D
+    title: Multiplication facts
+    requires: [B, C]
+    items:
+      - {id: d1, prompt: "3 x 4 = ?", answers: ["12"], explanation: "Three groups of four: 4, 8, 12."}
+      - {id: d2, prompt: "6 x 2 = ?", answers: ["12"], explanation: "Six twos: double 6 is 12."}
+      - {id: d3, prompt: "5 x 3 = ?", answers: ["15"], explanation: "Count by fives three times: 5, 10, 15."}
