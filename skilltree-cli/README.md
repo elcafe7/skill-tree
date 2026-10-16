@@ -5,7 +5,7 @@ event log), rebuilt around retrieval practice, FSRS spaced review, successive re
 mastery-gated unlocks. Points/XP never gate anything (M1 has no XP). The inherited
 `skills-service` code in the rest of this repo is untouched; this package is self-contained here.
 
-Spec: Milestone 1 (`skilltree-m1.md`).
+Spec: [`SPEC-m1.md`](SPEC-m1.md).
 
 ## Install
 
@@ -59,7 +59,7 @@ explanation, in one transaction (no partial writes). Re-import upserts by id.
 - **FSRS:** correct = Good, wrong = Again (py-fsrs defaults, fuzzing off for replay determinism).
 - **Successive relearning:** 3 correct on the first study day, then 3 correct on 3 distinct later days = learned.
 - **BKT per skill:** P_INIT 0.1, P_TRANSIT 0.15, P_GUESS 0.05, P_SLIP 0.1.
-- **Unlock:** every prerequisite has p_known >= 0.95 and a correct answer >= 24h after its first exposure.
+- **Unlock:** each prerequisite needs p_known >= 0.95, and >= 80% of its items must each have 2 correct answers on different days, each >= 24h after the item's first exposure, since its last miss, with the most recent answer correct.
 - **Events** (`imported`, `answered`, `unlocked`) are append-only; `card_state`/`skill_state` are derived.
 
 Constants live in `src/skilltree/config.py`.

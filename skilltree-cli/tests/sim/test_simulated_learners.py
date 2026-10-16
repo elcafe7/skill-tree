@@ -7,7 +7,7 @@ from datetime import timedelta
 import pytest
 
 from skilltree import db, engine
-from skilltree.clock import FakeClock, parse
+from skilltree.clock import FakeClock, iso, parse
 from skilltree.yaml_import import load_file
 from conftest import FIXTURE
 
@@ -116,6 +116,20 @@ def test_forgetful_learner():
     assert shrank
     u = unlock_times(conn)
     assert "B" in u or "C" in u
+    # never unlocks a skill while any prerequisite item's most recent answer is wrong
+    for skill, ts in u.items():
+        for (req,) in conn.execute("SELECT requires_id FROM prereqs WHERE skill_id=?", (skill,)):
+            for (item,) in conn.execute("SELECT id FROM items WHERE skill_id=?", (req,)):
+                last = conn.execute(
+                    "SELECT payload FROM events WHERE type='answered' AND item_id=? AND ts<=? "
+                    "ORDER BY seq DESC LIMIT 1", (item, iso(ts))).fetchone()
+                assert last is not None and json.loads(last[0])["correct"], (skill, item)
     pu = unlock_times(run(Perfect())[0])
     first = min(u[k] for k in ("B", "C") if k in u)
-    assert first > min(pu["B"], pu["C"])
+    assert first >= min(pu["B"], pu["C"])
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_guesser_never_unlocks_seeds(seed):
+    conn, _ = run(Guesser(), seed)
+    assert set(unlock_times(conn)) == {"A"}

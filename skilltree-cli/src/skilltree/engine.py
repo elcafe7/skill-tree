@@ -132,12 +132,20 @@ class AnswerResult:
     unlocked: list[str]
 
 
+def skill_view(conn, skill_id) -> unlock.SkillView:
+    p = conn.execute("SELECT p_known FROM skill_state WHERE skill_id = ?", (skill_id,)).fetchone()[0]
+    n = conn.execute("SELECT COUNT(*) FROM items WHERE skill_id = ?", (skill_id,)).fetchone()[0]
+    answers: dict[str, list] = {}
+    for r in conn.execute("SELECT item_id, ts, payload FROM events WHERE type = 'answered' AND skill_id = ? "
+                          "ORDER BY seq", (skill_id,)):
+        answers.setdefault(r["item_id"], []).append((parse(r["ts"]), bool(json.loads(r["payload"])["correct"])))
+    return unlock.SkillView(p, answers, n)
+
+
 def _prereq_views(conn, skill_id) -> dict[str, unlock.SkillView]:
-    rows = conn.execute(
-        "SELECT p.requires_id, st.p_known, st.last_delayed_success_ts FROM prereqs p "
-        "JOIN skill_state st ON st.skill_id = p.requires_id WHERE p.skill_id = ? ORDER BY p.requires_id",
-        (skill_id,)).fetchall()
-    return {r["requires_id"]: unlock.SkillView(r["p_known"], r["last_delayed_success_ts"]) for r in rows}
+    rows = conn.execute("SELECT requires_id FROM prereqs WHERE skill_id = ? ORDER BY requires_id",
+                        (skill_id,)).fetchall()
+    return {r["requires_id"]: skill_view(conn, r["requires_id"]) for r in rows}
 
 
 def check_unlocks(conn, now: datetime) -> list[str]:
