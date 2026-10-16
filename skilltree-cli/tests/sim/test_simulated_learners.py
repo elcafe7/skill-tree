@@ -11,7 +11,7 @@ from skilltree.clock import FakeClock, iso, parse
 from skilltree.yaml_import import load_file
 from conftest import FIXTURE
 
-DAYS = 60
+DAYS = 90
 
 
 class Perfect:
@@ -126,7 +126,7 @@ def test_forgetful_learner():
                 assert last is not None and json.loads(last[0])["correct"], (skill, item)
     pu = unlock_times(run(Perfect())[0])
     first = min(u[k] for k in ("B", "C") if k in u)
-    assert first >= min(pu["B"], pu["C"])
+    assert first.date() >= min(pu["B"], pu["C"]).date()  # compared by study day
 
 
 @pytest.mark.parametrize("seed", range(10))

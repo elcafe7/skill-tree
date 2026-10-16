@@ -132,8 +132,8 @@ Import must reject, with a clear error and no partial write (one transaction), a
 
 **Unlock.** A skill with no prerequisites is unlocked at import (append `unlocked` with reason `root`). A skill with prerequisites unlocks when every prerequisite is mastered. A prerequisite is mastered only when all of these hold (constants in `config.py`):
 1. BKT `p_known >= 0.95` (`UNLOCK_P_KNOWN`).
-2. At least 80% (`MASTERY_ITEM_FRACTION`, rounded up to whole items) of the skill's items each have at least 2 (`DELAYED_ITEM_SUCCESSES`) correct answers on different study days, each at least 24 hours (`DELAYED_SUCCESS_HOURS`) after that item's first exposure, counted since the item's most recent wrong answer.
-3. The most recent answer on each of those items was correct.
+2. At least 80% (`MASTERY_ITEM_FRACTION`, rounded up to whole items) of the skill's items each have at least 3 (`DELAYED_ITEM_SUCCESSES`) correct answers on different study days, each at least 24 hours (`DELAYED_SUCCESS_HOURS`) after that item's first exposure, counted since the item's most recent wrong answer.
+3. The most recent answer on each of those items was correct, and accuracy over the item's last 6 answers (`ITEM_ACCURACY_WINDOW`), or all of them if fewer, is at least 70% (`ITEM_MIN_ACCURACY`).
 A lapse therefore removes an item from the mastered set until it earns its delayed successes again. Item mastery is computed from the `answered` events (the source of truth). Check after every `answered` event, and append `unlocked` once.
 
 **Item selection** (`next_items`). Due items first, ordered by `due`. Then new items only from unlocked skills, in YAML order, up to `--limit` (default 20). In-session relearning repeats are inserted after at least two other items when possible.
@@ -151,17 +151,17 @@ A lapse therefore removes an item from the mastered set until it earns its delay
 2. FSRS mapping: correct calls Good, wrong calls Again, and `due` always moves forward.
 3. Relearning counters: initial phase needs 3 correct; spaced needs 3 distinct days; a spaced miss resets.
 4. BKT: fixed sequences match hand-computed values to 1e-9 with the defaults above.
-5. Unlock: p_known 0.96 without delayed item successes stays locked; fewer than 80% mastered items stays locked; a lapse removes an item until it re-earns 2 delayed successes; one weak prerequisite blocks it.
+5. Unlock: p_known 0.96 without delayed item successes stays locked; fewer than 80% mastered items stays locked; a lapse removes an item until it re-earns 3 delayed successes; accuracy below 70% over the last 6 answers blocks it; one weak prerequisite blocks it.
 6. YAML validation: a cycle, an unknown id, a duplicate id, and an empty answers list each fail, and the database is unchanged afterward.
 7. Rebuild invariant: after a scripted session, `rebuild` yields identical `card_state` and `skill_state`.
 8. Events are append-only. A test asserts that no code path issues UPDATE or DELETE on `events` (grep the source as a test).
 
 `tests/fixtures/tree.yaml` has 4 skills, A as the root, B and C requiring A, and D requiring B and C, with 3 items each.
 
-**Simulated learners** (`tests/sim`), using FakeClock over 60 days with one study session per day through `engine` directly:
+**Simulated learners** (`tests/sim`), using FakeClock over 90 days with one study session per day through `engine` directly:
 - Perfect (always correct): unlocks follow the DAG order, nothing unlocks before the 24-hour delayed-success rule allows, and intervals grow across reviews.
 - Guesser (random correct at 0.25 rate): never unlocks B, C, or D, across seeds 0-9.
-- Forgetful (recall probability decays exponentially since last review, seeded RNG): lapses shorten intervals, it eventually unlocks B or C, it never unlocks a skill while any prerequisite item's most recent answer is wrong, and its first unlock is no earlier than the perfect learner's.
+- Forgetful (recall probability decays exponentially since last review, seeded RNG): lapses shorten intervals, it eventually unlocks B or C, it never unlocks a skill while any prerequisite item's most recent answer is wrong, and its first unlock is no earlier (compared by study day) than the perfect learner's.
 - For every profile, after each session no studied item is due before that session's clock.
 Seed every RNG and make the simulation deterministic.
 

@@ -3,7 +3,8 @@
 2. >= MASTERY_ITEM_FRACTION of its items each have DELAYED_ITEM_SUCCESSES correct answers on distinct
    study days, each >= DELAYED_SUCCESS_HOURS after that item's first exposure, counted since the item's
    most recent wrong answer (a lapse resets them);
-3. the most recent answer on each of those items was correct.
+3. the most recent answer on each of those items was correct, and accuracy over the item's last
+   ITEM_ACCURACY_WINDOW answers (or all, if fewer) is >= ITEM_MIN_ACCURACY.
 """
 from __future__ import annotations
 import math
@@ -26,7 +27,9 @@ def item_mastered(history: list[tuple[datetime, bool]]) -> bool:
     last_wrong = max((i for i, (_, c) in enumerate(history) if not c), default=-1)
     days = {ts.date() for ts, c in history[last_wrong + 1:]
             if c and ts - first >= timedelta(hours=config.DELAYED_SUCCESS_HOURS)}
-    return len(days) >= config.DELAYED_ITEM_SUCCESSES
+    window = history[-config.ITEM_ACCURACY_WINDOW:]
+    accuracy = sum(c for _, c in window) / len(window)
+    return len(days) >= config.DELAYED_ITEM_SUCCESSES and accuracy >= config.ITEM_MIN_ACCURACY - 1e-12
 
 
 def required_items(n_items: int) -> int:
