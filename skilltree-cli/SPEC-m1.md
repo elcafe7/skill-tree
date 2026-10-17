@@ -14,6 +14,10 @@ One learner can author a small YAML skill tree, study typed-recall items in the 
 ## Non-goals for M1
 Multiple choice or other item kinds, fuzzy or AI grading, worked-example fading, interleaving across discrimination sets, XP, any GUI, sync, multiple profiles, and FSRS parameter optimization.
 
+## M2 ideas
+- Fill-in-the-blank / cloze items as a production-format item type.
+- Worked-example fading and interleaving (both need M1's event history).
+
 ## Invariants
 - Never update or delete a row in `events`.
 - `skilltree rebuild` produces derived tables identical to the live ones.

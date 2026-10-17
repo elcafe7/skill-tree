@@ -814,5 +814,20 @@ entire book has been pedagogically or medically modernised.
 
 ## Status
 
-No application code has been changed in this preliminary fork. This README is
-the implementation contract for the first clean-room, single-user version.
+Milestone 1 is implemented as a standalone Python 3.12 CLI in
+[`skilltree-cli/`](skilltree-cli/) (see its README and `SPEC-m1.md`): YAML skill
+trees, typed-recall study, FSRS scheduling, successive relearning, BKT, and
+mastery-gated unlocks over an append-only SQLite event log. The inherited
+SkillTree Groovy/Vue code is retained unchanged as a historical snapshot; the CLI
+does not use or depend on it.
+
+## Provenance
+
+This repository is a fork of
+[NationalSecurityAgency/skills-service](https://github.com/NationalSecurityAgency/skills-service).
+The inherited code is based on upstream commit
+[`821e83b`](https://github.com/NationalSecurityAgency/skills-service/commit/821e83bee884b36a94737c840a1474f8bf5fa5ea)
+(2026-07-24, "Merge pull request #3973"), the merge-base with upstream `master`.
+That commit is a `4.6.0-SNAPSHOT` development build: 221 commits after the 4.5.2
+release and 14 commits before the 4.6.0 tag. Upstream changes are intentionally
+not synced, since the CLI shares no code with skills-service.

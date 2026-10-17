@@ -64,6 +64,12 @@ explanation, in one transaction (no partial writes). Re-import upserts by id.
 
 Constants live in `src/skilltree/config.py`.
 
+## Deferred (M2 ideas)
+
+- Fill-in-the-blank / cloze items as a production-format item type.
+- Worked-example fading and interleaving across discrimination sets.
+- Multiple choice and other item kinds, fuzzy grading, XP, a GUI, sync, FSRS parameter optimization.
+
 ## Layout
 
 ```
@@ -71,3 +77,7 @@ src/skilltree/  cli.py db.py engine.py grading.py scheduler.py relearning.py bkt
                 yaml_import.py clock.py config.py migrations/0001_init.sql
 tests/          unit tests, CLI end-to-end, sim/test_simulated_learners.py (60-day FakeClock)
 ```
+
+## License
+
+Apache-2.0; see [../LICENSE.txt](../LICENSE.txt) and [../DISCLAIMER.md](../DISCLAIMER.md). Derived from NSA's SkillTree (skills-service); this is an independent project and is not endorsed by the U.S. Government or NSA.
