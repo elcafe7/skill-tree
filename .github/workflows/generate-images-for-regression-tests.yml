@@ -15,7 +15,7 @@
 name: Generate Images for Regression Tests
 
 env:
-  NODE_VERSION: 26
+  NODE_VERSION: 26.12.1
   JAVA_VERSION: 25
 
 on:

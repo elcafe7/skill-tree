@@ -15,7 +15,7 @@
 name: Continuous Integration
 
 env:
-  NODE_VERSION: 26
+  NODE_VERSION: 26.12.1
   JAVA_VERSION: 25
 
 on:
